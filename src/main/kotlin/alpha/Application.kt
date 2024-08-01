@@ -1,6 +1,7 @@
 package alpha
 
-import alpha.plugins.*
+import alpha.config.configureDatabase
+import alpha.config.configureRouting
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
@@ -8,5 +9,6 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    configureDatabase()
     configureRouting()
 }

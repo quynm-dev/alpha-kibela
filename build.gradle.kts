@@ -1,5 +1,8 @@
 val kotlinVersion: String by project
 val logbackVersion: String by project
+val hikariCPVersion: String by project
+val mysqlConnectorJVersion: String by project
+val exposedVersion: String by project
 
 plugins {
     kotlin("jvm") version "2.0.0"
@@ -25,6 +28,15 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("io.ktor:ktor-server-config-yaml")
+
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jodatime:$exposedVersion")
+    implementation("com.zaxxer:HikariCP:$hikariCPVersion")
+    implementation("com.mysql:mysql-connector-j:$mysqlConnectorJVersion")
+
     testImplementation("io.ktor:ktor-server-test-host-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
 }
