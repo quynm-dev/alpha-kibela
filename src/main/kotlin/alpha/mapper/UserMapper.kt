@@ -9,8 +9,8 @@ fun UserEntity.toObject(): UserObject {
         id = this.id.value,
         username = this.username,
         email = this.email,
-        createdAt = this.createdAt.toString(),
-        updatedAt = this.updatedAt.toString()
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
     )
 }
 
