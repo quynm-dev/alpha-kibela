@@ -1,9 +1,6 @@
 package alpha
 
-import alpha.config.configureDI
-import alpha.config.configureDatabase
-import alpha.config.configureRouting
-import alpha.config.configureSerialization
+import alpha.config.*
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
@@ -15,4 +12,5 @@ fun Application.module() {
     configureDatabase()
     configureRouting()
     configureSerialization()
+    configureExceptionInterceptor()
 }
