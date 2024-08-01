@@ -15,6 +15,7 @@ class CodeFactory {
         val UNAUTHORIZED = buildCode(HttpStatusCode.Unauthorized)
         val FORBIDDEN = buildCode(HttpStatusCode.Forbidden)
         val NOT_FOUND = buildCode(HttpStatusCode.NotFound)
+        val DB_ERROR = buildCode(HttpStatusCode.InternalServerError)
         val INTERNAL_SERVER_ERROR = buildCode(HttpStatusCode.InternalServerError)
 
         fun buildCode(status: HttpStatusCode): Code {
@@ -22,7 +23,5 @@ class CodeFactory {
         }
     }
 
-    class UserCode : GeneralCode(Domain.USER) {
-        val EMAIL_ALREADY_EXISTS = buildCode(HttpStatusCode.Conflict)
-    }
+    class UserCode : GeneralCode(Domain.USER)
 }
