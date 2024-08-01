@@ -3,6 +3,11 @@ package alpha.config
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
+import liquibase.Scope
+import liquibase.command.CommandScope
+import liquibase.database.DatabaseFactory
+import liquibase.database.jvm.JdbcConnection
+import liquibase.resource.ClassLoaderResourceAccessor
 import org.jetbrains.exposed.sql.Database
 
 data class DatabaseConfig(
@@ -14,9 +19,20 @@ data class DatabaseConfig(
 )
 
 class DatabaseConfigurer(private val config: DatabaseConfig) {
+    companion object {
+        const val CHANGELOG_FILE = "db/changelog.yaml"
+    }
+
     fun initConnection() {
         val dataSource = initDataSource(config)
         Database.connect(dataSource)
+
+        Scope.child(Scope.Attr.resourceAccessor, ClassLoaderResourceAccessor()) {
+            CommandScope("update")
+                .addArgumentValue("changelogFile", CHANGELOG_FILE)
+                .addArgumentValue("database", DatabaseFactory.getInstance().findCorrectDatabaseImplementation(JdbcConnection(dataSource.connection)))
+                .execute()
+        }
     }
 
     private fun initDataSource(config: DatabaseConfig) = HikariDataSource(initHikariConfig(config))

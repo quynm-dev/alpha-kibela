@@ -3,6 +3,7 @@ val logbackVersion: String by project
 val hikariCPVersion: String by project
 val mysqlConnectorJVersion: String by project
 val exposedVersion: String by project
+val liquibaseVersion: String by project
 
 plugins {
     kotlin("jvm") version "2.0.0"
@@ -29,6 +30,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("io.ktor:ktor-server-config-yaml")
 
+    implementation("org.liquibase:liquibase-core:$liquibaseVersion")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
