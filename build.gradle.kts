@@ -8,6 +8,7 @@ val koinVersion: String by project
 val koinKspVersion: String by project
 val resultVersion: String by project
 val ktorVersion: String by project
+val microLoggingVersion: String by project
 
 plugins {
     kotlin("jvm") version "2.0.0"
@@ -41,9 +42,15 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-config-yaml:$ktorVersion")
     implementation("io.ktor:ktor-server-openapi:$ktorVersion")
+    implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+
     implementation("io.ktor:ktor-client-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-client-apache-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging:$ktorVersion")
 
     // DI
     implementation("io.insert-koin:koin-ktor:$koinVersion")
@@ -66,6 +73,7 @@ dependencies {
 
     // Logging
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("io.github.microutils:kotlin-logging-jvm:$microLoggingVersion")
 
     // UT
     testImplementation("io.ktor:ktor-server-test-host-jvm")
