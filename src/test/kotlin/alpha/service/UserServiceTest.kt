@@ -1,4 +1,5 @@
 @file:Suppress("INLINE_FROM_HIGHER_PLATFORM")
+
 package alpha.service
 
 import alpha.data.`object`.UserObject

@@ -15,7 +15,7 @@ import org.koin.core.annotation.Factory
 val logger = KotlinLogging.logger {}
 
 @Factory([HttpClient::class, IHttpClient::class])
-class HttpClient: IHttpClient {
+class HttpClient : IHttpClient {
     private val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json()
@@ -27,7 +27,12 @@ class HttpClient: IHttpClient {
         install(Logging) { level = LogLevel.INFO }
     }
 
-    override suspend fun <T> submit(url: String, method: HttpMethod, body: T?, configurer: IHttpClient.ClientConfig<T>.() -> Unit): HttpResponse {
+    override suspend fun <T> submit(
+        url: String,
+        method: HttpMethod,
+        body: T?,
+        configurer: IHttpClient.ClientConfig<T>.() -> Unit
+    ): HttpResponse {
         val config = IHttpClient.ClientConfig(url, body)
         configurer(config)
         try {

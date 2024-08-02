@@ -12,7 +12,7 @@ inline fun Route.withRoles(vararg roles: Role, crossinline build: Route.() -> Un
     route.build()
 }
 
-class RoleRouteSelector: RouteSelector() {
+class RoleRouteSelector : RouteSelector() {
     override fun evaluate(context: RoutingResolveContext, segmentIndex: Int) = RouteSelectorEvaluation.Transparent
 }
 

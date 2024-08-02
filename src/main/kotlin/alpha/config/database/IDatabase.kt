@@ -24,9 +24,11 @@ abstract class IDatabase(val config: DatabaseConfig) {
         Scope.child(Scope.Attr.resourceAccessor, ClassLoaderResourceAccessor()) {
             CommandScope("update")
                 .addArgumentValue("changelogFile", CHANGELOG_FILE)
-                .addArgumentValue("database", DatabaseFactory.getInstance().findCorrectDatabaseImplementation(
-                    JdbcConnection(dataSource.connection)
-                ))
+                .addArgumentValue(
+                    "database", DatabaseFactory.getInstance().findCorrectDatabaseImplementation(
+                        JdbcConnection(dataSource.connection)
+                    )
+                )
                 .execute()
         }
 

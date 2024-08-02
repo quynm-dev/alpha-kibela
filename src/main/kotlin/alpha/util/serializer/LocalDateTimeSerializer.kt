@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = LocalDateTime::class)
-class LocalDateTimeSerializer: KSerializer<LocalDateTime> {
+class LocalDateTimeSerializer : KSerializer<LocalDateTime> {
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     override fun serialize(encoder: Encoder, value: LocalDateTime) {
