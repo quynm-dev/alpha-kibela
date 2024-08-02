@@ -1,4 +1,7 @@
-package alpha.config.database
+package alpha.config
+
+import alpha.config.database.DatabaseConfig
+import alpha.config.database.IDatabase
 
 class H2Database(config: DatabaseConfig): IDatabase(
     config.copy(autoCommit = false)

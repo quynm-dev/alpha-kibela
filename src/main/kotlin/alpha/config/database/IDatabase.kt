@@ -14,12 +14,12 @@ abstract class IDatabase(val config: DatabaseConfig) {
         const val CHANGELOG_FILE = "db/changelog.yaml"
     }
 
-    var db: Database? = null
+    lateinit var db: Database
     abstract val url: String
 
-    fun initConnection() {
-        val dataSource = initDataSource(config)
-        Database.connect(dataSource)
+    fun initDataSource(): HikariDataSource {
+        val dataSource = HikariDataSource(initHikariConfig(config))
+        db = Database.connect(dataSource)
 
         Scope.child(Scope.Attr.resourceAccessor, ClassLoaderResourceAccessor()) {
             CommandScope("update")
@@ -29,9 +29,9 @@ abstract class IDatabase(val config: DatabaseConfig) {
                 ))
                 .execute()
         }
-    }
 
-    private fun initDataSource(config: DatabaseConfig) = HikariDataSource(initHikariConfig(config))
+        return dataSource
+    }
 
     private fun initHikariConfig(config: DatabaseConfig): HikariConfig {
         val hikariConfig = HikariConfig()

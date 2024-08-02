@@ -12,7 +12,7 @@ fun Route.userController() {
 
     route("/users") {
         get("/") {
-            userService.getAll().mapBoth(
+            userService.findAll().mapBoth(
                 success = { call.respond(it) },
                 failure = { err -> call.respond(err.code.status, err.toResponse()) }
             )

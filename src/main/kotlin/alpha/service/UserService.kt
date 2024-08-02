@@ -15,14 +15,14 @@ import org.koin.core.annotation.Singleton
 class UserService(
     private val userRepository: UserRepository
 ) {
-    suspend fun getAll(): UniResult<List<UserResponse>> {
+    suspend fun findAll(): UniResult<List<UserResponse>> {
         try {
-            return userRepository.getAll().map { it.toResponse() }.wrapResult()
+            return userRepository.findAll().map { it.toResponse() }.wrapResult()
         } catch (e: ExposedSQLException) {
             val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to get all users")
             return appErr.wrapError()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.GENERAL.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
+            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
             return appErr.wrapError()
         }
     }

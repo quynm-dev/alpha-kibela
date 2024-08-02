@@ -11,7 +11,7 @@ import org.koin.core.annotation.Singleton
 
 @Singleton
 class UserRepository {
-    suspend fun getAll(): List<UserObject> {
+    suspend fun findAll(): List<UserObject> {
         return transactionWrapper {
             try {
                 Users.selectAll().map { UserEntity.wrapRow(it).toObject() }
@@ -19,21 +19,5 @@ class UserRepository {
                 throw e
             }
         }
-    }
-
-    suspend fun create() {
-        println("UserRepository.create")
-    }
-
-    suspend fun get() {
-        println("UserRepository.read")
-    }
-
-    suspend fun update() {
-        println("UserRepository.update")
-    }
-
-    suspend fun delete() {
-        println("UserRepository.delete")
     }
 }
