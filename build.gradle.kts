@@ -1,3 +1,5 @@
+import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+
 val kotlinVersion: String by project
 val logbackVersion: String by project
 val hikariCPVersion: String by project
@@ -18,6 +20,7 @@ plugins {
     id("io.ktor.plugin") version "2.3.12"
     id("com.google.devtools.ksp") version "2.0.0-1.0.22"
     kotlin("plugin.serialization") version "1.9.10"
+    id("com.ncorti.ktfmt.gradle") version "0.19.0"
 }
 
 group = "alpha"
@@ -83,6 +86,19 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+}
+
+ktfmt {
+    maxWidth.set(80)
+    blockIndent.set(4)
+    continuationIndent.set(4)
+    removeUnusedImports.set(true)
+    manageTrailingCommas.set(false)
+}
+
+tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {
+    source = project.fileTree(rootDir)
+    include("**/*.kt")
 }
 
 tasks.withType<Test> {
