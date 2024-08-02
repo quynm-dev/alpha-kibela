@@ -1,6 +1,7 @@
 package alpha
 
 import alpha.config.*
+import alpha.config.database.configureDatabase
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {

@@ -9,6 +9,9 @@ val koinKspVersion: String by project
 val resultVersion: String by project
 val ktorVersion: String by project
 val microLoggingVersion: String by project
+val h2Version: String by project
+val jUnitVersion: String by project
+val mockkVersion: String by project
 
 plugins {
     kotlin("jvm") version "2.0.0"
@@ -33,18 +36,17 @@ repositories {
 
 dependencies {
     // Ktor
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-config-yaml:$ktorVersion")
     implementation("io.ktor:ktor-server-openapi:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
 
     implementation("io.ktor:ktor-client-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-client-apache-jvm:$ktorVersion")
@@ -77,6 +79,12 @@ dependencies {
     implementation("io.github.microutils:kotlin-logging-jvm:$microLoggingVersion")
 
     // UT
-    testImplementation("io.ktor:ktor-server-test-host-jvm")
+    testImplementation("com.h2database:h2:$h2Version")
+    testImplementation("org.junit.jupiter:junit-jupiter:$jUnitVersion")
+    testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }

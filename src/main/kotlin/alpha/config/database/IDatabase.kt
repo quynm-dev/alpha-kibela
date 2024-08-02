@@ -1,8 +1,7 @@
-package alpha.config
+package alpha.config.database
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.server.application.*
 import liquibase.Scope
 import liquibase.command.CommandScope
 import liquibase.database.DatabaseFactory
@@ -10,18 +9,13 @@ import liquibase.database.jvm.JdbcConnection
 import liquibase.resource.ClassLoaderResourceAccessor
 import org.jetbrains.exposed.sql.Database
 
-data class DatabaseConfig(
-    val driver: String,
-    val jdbcUrl: String,
-    val user: String,
-    val password: String,
-    val name: String
-)
-
-class DatabaseConfigurer(private val config: DatabaseConfig) {
+abstract class IDatabase(val config: DatabaseConfig) {
     companion object {
         const val CHANGELOG_FILE = "db/changelog.yaml"
     }
+
+    var db: Database? = null
+    abstract val url: String
 
     fun initConnection() {
         val dataSource = initDataSource(config)
@@ -30,7 +24,9 @@ class DatabaseConfigurer(private val config: DatabaseConfig) {
         Scope.child(Scope.Attr.resourceAccessor, ClassLoaderResourceAccessor()) {
             CommandScope("update")
                 .addArgumentValue("changelogFile", CHANGELOG_FILE)
-                .addArgumentValue("database", DatabaseFactory.getInstance().findCorrectDatabaseImplementation(JdbcConnection(dataSource.connection)))
+                .addArgumentValue("database", DatabaseFactory.getInstance().findCorrectDatabaseImplementation(
+                    JdbcConnection(dataSource.connection)
+                ))
                 .execute()
         }
     }
@@ -50,16 +46,4 @@ class DatabaseConfigurer(private val config: DatabaseConfig) {
 
         return hikariConfig
     }
-}
-
-fun Application.configureDatabase() {
-    val config = DatabaseConfig(
-        driver = System.getenv("MYSQL_DRIVER") ?: throw IllegalStateException("Missing MYSQL_DRIVER environment variable"),
-        jdbcUrl = System.getenv("MYSQL_URL") ?: throw IllegalStateException("Missing MYSQL_URL environment variable"),
-        user = System.getenv("MYSQL_USER") ?: throw IllegalStateException("Missing MYSQL_USER environment variable"),
-        password = System.getenv("MYSQL_PASSWORD") ?: throw IllegalStateException("Missing MYSQL_PASSWORD environment variable"),
-        name = System.getenv("MYSQL_DATABASE") ?: throw IllegalStateException("Missing MYSQL_DATABASE environment variable")
-    )
-
-    DatabaseConfigurer(config).initConnection()
 }
