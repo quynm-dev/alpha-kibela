@@ -1,13 +1,12 @@
 @file:Suppress("INLINE_FROM_HIGHER_PLATFORM")
-
 package alpha.repository
 
 import alpha.config.IRepositoryTest
 import io.mockk.clearAllMocks
-import kotlin.test.assertEquals
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 class UserRepositoryTest {
     companion object : IRepositoryTest() {

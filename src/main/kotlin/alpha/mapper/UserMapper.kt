@@ -10,7 +10,8 @@ fun UserEntity.toObject(): UserObject {
         username = this.username,
         email = this.email,
         createdAt = this.createdAt,
-        updatedAt = this.updatedAt)
+        updatedAt = this.updatedAt
+    )
 }
 
 fun UserObject.toResponse(): UserResponse {
@@ -19,5 +20,6 @@ fun UserObject.toResponse(): UserResponse {
         username = this.username,
         email = this.email,
         createdAt = this.createdAt,
-        updatedAt = this.updatedAt)
+        updatedAt = this.updatedAt
+    )
 }

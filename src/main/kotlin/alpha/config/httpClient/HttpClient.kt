@@ -15,23 +15,19 @@ import org.koin.core.annotation.Factory
 val logger = KotlinLogging.logger {}
 
 @Factory([HttpClient::class, IHttpClient::class])
-class HttpClient : IHttpClient {
-    private val httpClient =
-        HttpClient(CIO) {
-            install(ContentNegotiation) { json() }
-            install(HttpRequestRetry) {
-                retryOnServerErrors(maxRetries = 3)
-                exponentialDelay()
-            }
-            install(Logging) { level = LogLevel.INFO }
+class HttpClient: IHttpClient {
+    private val httpClient = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json()
         }
+        install(HttpRequestRetry) {
+            retryOnServerErrors(maxRetries = 3)
+            exponentialDelay()
+        }
+        install(Logging) { level = LogLevel.INFO }
+    }
 
-    override suspend fun <T> submit(
-        url: String,
-        method: HttpMethod,
-        body: T?,
-        configurer: IHttpClient.ClientConfig<T>.() -> Unit
-    ): HttpResponse {
+    override suspend fun <T> submit(url: String, method: HttpMethod, body: T?, configurer: IHttpClient.ClientConfig<T>.() -> Unit): HttpResponse {
         val config = IHttpClient.ClientConfig(url, body)
         configurer(config)
         try {

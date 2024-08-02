@@ -12,12 +12,16 @@ class RepositoryTestRunner(
     initBlock: Transaction.() -> Unit
 ) {
     init {
-        transaction(db) { initBlock() }
+        transaction(db) {
+            initBlock()
+        }
     }
 
     operator fun invoke(block: suspend () -> Unit) {
         transaction(db) {
-            runBlocking { block() }
+            runBlocking {
+                block()
+            }
             rollback()
         }
     }

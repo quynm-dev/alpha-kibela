@@ -7,8 +7,8 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.javatime.CurrentDateTime
 import org.jetbrains.exposed.sql.javatime.datetime
 
-class UserEntity(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<UserEntity>(Users)
+class UserEntity(id: EntityID<Int>): IntEntity(id) {
+    companion object: IntEntityClass<UserEntity>(Users)
 
     var username by Users.username
     var email by Users.email
@@ -17,7 +17,7 @@ class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     var updatedAt by Users.updatedAt
 }
 
-object Users : IntIdTable("users") {
+object Users: IntIdTable("users") {
     val username = varchar("username", 50)
     val email = varchar("email", 100).uniqueIndex()
     val password = varchar("password", 255)
