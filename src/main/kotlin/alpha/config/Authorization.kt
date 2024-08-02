@@ -6,14 +6,13 @@ import io.ktor.server.routing.*
 
 inline fun Route.withRoles(vararg roles: Role, crossinline build: Route.() -> Unit) {
     val route = createChild(RoleRouteSelector())
-    route.install(RbacPlugin) {
-        addRequireRoles(*roles)
-    }
+    route.install(RbacPlugin) { addRequireRoles(*roles) }
     route.build()
 }
 
-class RoleRouteSelector: RouteSelector() {
-    override fun evaluate(context: RoutingResolveContext, segmentIndex: Int) = RouteSelectorEvaluation.Transparent
+class RoleRouteSelector : RouteSelector() {
+    override fun evaluate(context: RoutingResolveContext, segmentIndex: Int) =
+        RouteSelectorEvaluation.Transparent
 }
 
 class RbacConfiguration {
@@ -24,7 +23,8 @@ class RbacConfiguration {
     }
 }
 
-val RbacPlugin = createRouteScopedPlugin("RbacPlugin", ::RbacConfiguration) {
-    val requiredRoles = pluginConfig.requiredRoles
-    // validate logic
-}
+val RbacPlugin =
+    createRouteScopedPlugin("RbacPlugin", ::RbacConfiguration) {
+        val requiredRoles = pluginConfig.requiredRoles
+        // validate logic
+    }

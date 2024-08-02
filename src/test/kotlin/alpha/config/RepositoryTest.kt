@@ -13,12 +13,13 @@ private var count = 0
 fun initH2Connection(): RepositoryTestRunner {
     val h2Database = H2Database(DatabaseConfig(jdbcUrl = H2_URL + count++, driver = H2_DRIVER))
 
-    transactionRunner = RepositoryTestRunner(h2Database.initDataSource(), h2Database.db) {
-        val mockSQLFile = File(MOCK_SQL_URL)
-        if (mockSQLFile.exists()) {
-            exec(mockSQLFile.readText())
+    transactionRunner =
+        RepositoryTestRunner(h2Database.initDataSource(), h2Database.db) {
+            val mockSQLFile = File(MOCK_SQL_URL)
+            if (mockSQLFile.exists()) {
+                exec(mockSQLFile.readText())
+            }
         }
-    }
 
     return transactionRunner
 }

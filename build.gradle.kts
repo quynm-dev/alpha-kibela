@@ -89,14 +89,10 @@ dependencies {
 }
 
 ktfmt {
-    maxWidth.set(80)
-    blockIndent.set(4)
-    continuationIndent.set(4)
-    removeUnusedImports.set(true)
-    manageTrailingCommas.set(false)
+    kotlinLangStyle()
 }
 
-tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {
+tasks.register<KtfmtFormatTask>("lint") {
     source = project.fileTree(rootDir)
     include("**/*.kt")
 }
