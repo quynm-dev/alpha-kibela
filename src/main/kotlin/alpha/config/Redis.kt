@@ -3,18 +3,19 @@ package alpha.config
 import io.ktor.server.sessions.*
 import mu.KotlinLogging
 import org.koin.core.annotation.Singleton
-import redis.clients.jedis.JedisPool
 import redis.clients.jedis.DefaultJedisClientConfig
 import redis.clients.jedis.HostAndPort
+import redis.clients.jedis.JedisPool
 
 val logger = KotlinLogging.logger {}
 
 @Singleton
-class Redis: SessionStorage {
+class Redis : SessionStorage {
     companion object {
         private val KEY_PREFIX = "stark:"
         private val EXPIRATION_TIME: Long = 60 * 60 * 24 * 30
     }
+
     private val jedisPool: JedisPool
 
     init {

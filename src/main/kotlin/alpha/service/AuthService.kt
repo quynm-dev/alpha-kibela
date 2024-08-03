@@ -72,13 +72,14 @@ class AuthService(
             grantType = GRANT_TYPE
         )
 
-        return httpClient.post(AUTH_URL, googleAuthRequest).deserializeWithStatus<GoogleAuthResponse>(HttpStatusCode.OK) {
-            return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
-        }.wrapResult()
+        return httpClient.post(AUTH_URL, googleAuthRequest)
+            .deserializeWithStatus<GoogleAuthResponse>(HttpStatusCode.OK) {
+                return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
+            }.wrapResult()
     }
 
     private suspend fun getUserInfoGoogle(accessToken: String): UniResult<GoogleUserInfoResponse> {
-        val googleUserInfoResponse =  httpClient.get(USER_INFO_URL) {
+        val googleUserInfoResponse = httpClient.get(USER_INFO_URL) {
             authorization = "Bearer $accessToken"
         }
 
