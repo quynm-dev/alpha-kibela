@@ -12,6 +12,7 @@ val microLoggingVersion: String by project
 val h2Version: String by project
 val jUnitVersion: String by project
 val mockkVersion: String by project
+val redisVersion: String by project
 
 plugins {
     kotlin("jvm") version "2.0.0"
@@ -77,6 +78,9 @@ dependencies {
     // Logging
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("io.github.microutils:kotlin-logging-jvm:$microLoggingVersion")
+
+    // Redis
+    implementation("redis.clients:jedis:$redisVersion")
 
     // UT
     testImplementation("com.h2database:h2:$h2Version")
