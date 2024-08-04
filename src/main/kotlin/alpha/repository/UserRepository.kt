@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.koin.core.annotation.Singleton
 import java.time.LocalDateTime
 
-val logger = KotlinLogging.logger {}
+private val logger = KotlinLogging.logger {}
 
 @Singleton
 class UserRepository {

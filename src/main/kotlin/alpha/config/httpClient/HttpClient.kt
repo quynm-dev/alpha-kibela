@@ -12,7 +12,7 @@ import io.ktor.serialization.kotlinx.json.*
 import mu.KotlinLogging
 import org.koin.core.annotation.Factory
 
-val logger = KotlinLogging.logger {}
+private val logger = KotlinLogging.logger {}
 
 @Factory([HttpClient::class, IHttpClient::class])
 class HttpClient : IHttpClient {

@@ -1,5 +1,6 @@
 package alpha.controller
 
+import alpha.extension.respondError
 import alpha.service.UserService
 import com.github.michaelbull.result.mapBoth
 import io.ktor.server.application.*
@@ -14,7 +15,7 @@ fun Route.userController() {
         get {
             userService.findAll().mapBoth(
                 success = { call.respond(it) },
-                failure = { err -> call.respond(err.code.status, err.toResponse()) }
+                failure = { call.respondError(it) }
             )
         }
     }

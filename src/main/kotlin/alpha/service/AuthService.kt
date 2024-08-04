@@ -24,7 +24,7 @@ import org.koin.core.annotation.Singleton
 import java.time.Instant
 import java.util.*
 
-val logger = KotlinLogging.logger {}
+private val logger = KotlinLogging.logger {}
 
 @Singleton
 class AuthService(
@@ -33,14 +33,14 @@ class AuthService(
     private val httpClient: HttpClient
 ) {
     companion object {
-        private const val AUTH_URL = "oauth2.googleapis.com/token"
-        private const val USER_INFO_URL = "www.googleapis.com/oauth2/v3/userinfo"
-        private const val GRANT_TYPE = "authorization_code"
-        private const val JWT_ISSUER = "alpha-kibela"
-        private const val JWT_ACCESS_TOKEN_AUDIENCE = "alpha-kibela-access-token"
-        private const val JWT_REFRESH_TOKEN_AUDIENCE = "alpha-kibela-refresh-token"
-        private const val JWT_ACCESS_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 1
-        private const val JWT_REFRESH_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 24 * 30
+        const val AUTH_URL = "oauth2.googleapis.com/token"
+        const val USER_INFO_URL = "www.googleapis.com/oauth2/v3/userinfo"
+        const val GRANT_TYPE = "authorization_code"
+        const val JWT_ISSUER = "alpha-kibela"
+        const val JWT_ACCESS_TOKEN_AUDIENCE = "alpha-kibela-access-token"
+        const val JWT_REFRESH_TOKEN_AUDIENCE = "alpha-kibela-refresh-token"
+        const val JWT_ACCESS_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 1
+        const val JWT_REFRESH_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 24 * 30
     }
 
     suspend fun authenticate(authRequest: AuthRequest): UniResult<AuthResponse> {
@@ -66,13 +66,13 @@ class AuthService(
                 googleAuthResponse.idToken
             )
 
-            val authReponse = AuthResponse(
+            val authResponse = AuthResponse(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
                 expiresIn = JWT_ACCESS_TOKEN_EXPIRATION_TIME.toInt()
             )
 
-            return authReponse.wrapResult()
+            return authResponse.wrapResult()
         } catch (e: Exception) {
             val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
             return appErr.wrapError()
@@ -123,12 +123,12 @@ class AuthService(
             .withAudience(JWT_ACCESS_TOKEN_AUDIENCE)
             .withExpiresAt(Date.from(Instant.now().plusSeconds(JWT_ACCESS_TOKEN_EXPIRATION_TIME)))
             .sign(Algorithm.HMAC256(secret))
-        val refresh = template
+        val refreshToken = template
             .withAudience(JWT_REFRESH_TOKEN_AUDIENCE)
             .withExpiresAt(Date.from(Instant.now().plusSeconds(JWT_REFRESH_TOKEN_EXPIRATION_TIME)))
             .sign(Algorithm.HMAC256(secret))
 
-        return Pair(accessToken, refresh)
+        return Pair(accessToken, refreshToken)
     }
 
     private suspend fun storeRedisData(

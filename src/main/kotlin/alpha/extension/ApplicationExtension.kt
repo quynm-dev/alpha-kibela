@@ -1,16 +1,18 @@
 package alpha.extension
 
+import alpha.error.AppError
 import io.ktor.server.application.*
+import io.ktor.server.response.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.*
 import mu.KotlinLogging
 
-val logger = KotlinLogging.logger {}
 
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified T : Any> ApplicationCall.receiveParams(): T {
+    val logger = KotlinLogging.logger {}
     val j = Json {
         ignoreUnknownKeys = true
     }
@@ -33,4 +35,8 @@ inline fun <reified T : Any> ApplicationCall.receiveParams(): T {
         logger.error { e.message }
         throw e
     }
+}
+
+suspend fun ApplicationCall.respondError(appError: AppError) {
+    respond(appError.code.status, appError.toResponse())
 }

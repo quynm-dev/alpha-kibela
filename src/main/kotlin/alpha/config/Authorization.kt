@@ -24,7 +24,7 @@ class RbacConfiguration {
     }
 }
 
-val RbacPlugin = createRouteScopedPlugin("RbacPlugin", ::RbacConfiguration) {
+val RbacPlugin = createRouteScopedPlugin("rbacPlugin", ::RbacConfiguration) {
     val requiredRoles = pluginConfig.requiredRoles
     // validate logic
 }

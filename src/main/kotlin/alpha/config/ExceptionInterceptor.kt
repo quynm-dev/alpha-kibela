@@ -1,14 +1,15 @@
 package alpha.config
 
-import io.ktor.http.*
+import alpha.error.AppError
+import alpha.error.CodeFactory
+import alpha.extension.respondError
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
 
 fun Application.configureExceptionInterceptor() {
     install(StatusPages) {
         exception<Exception> { call, cause ->
-            call.respond(HttpStatusCode.InternalServerError, cause.localizedMessage)
+            call.respondError(AppError(CodeFactory.GENERAL.INTERNAL_SERVER_ERROR, cause.localizedMessage))
         }
     }
 }
