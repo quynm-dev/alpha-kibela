@@ -1,32 +1,46 @@
 package alpha.service
 
 import alpha.common.UniResult
+import alpha.config.Redis
 import alpha.config.httpClient.HttpClient
 import alpha.data.dto.request.AuthRequest
 import alpha.data.dto.request.GoogleAuthRequest
 import alpha.data.dto.response.AuthResponse
 import alpha.data.dto.response.GoogleAuthResponse
 import alpha.data.dto.response.GoogleUserInfoResponse
+import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
 import alpha.extension.deserializeWithStatus
 import alpha.extension.then
 import alpha.extension.wrapError
 import alpha.extension.wrapResult
+import alpha.mapper.toUserObject
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
 import mu.KotlinLogging
 import org.koin.core.annotation.Singleton
+import java.time.Instant
+import java.util.*
 
 val logger = KotlinLogging.logger {}
 
 @Singleton
 class AuthService(
+    private val userService: UserService,
+    private val redis: Redis,
     private val httpClient: HttpClient
 ) {
     companion object {
         private const val AUTH_URL = "oauth2.googleapis.com/token"
         private const val USER_INFO_URL = "www.googleapis.com/oauth2/v3/userinfo"
         private const val GRANT_TYPE = "authorization_code"
+        private const val JWT_ISSUER = "alpha-kibela"
+        private const val JWT_ACCESS_TOKEN_AUDIENCE = "alpha-kibela-access-token"
+        private const val JWT_REFRESH_TOKEN_AUDIENCE = "alpha-kibela-refresh-token"
+        private const val JWT_ACCESS_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 1
+        private const val JWT_REFRESH_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 24 * 30
     }
 
     suspend fun authenticate(authRequest: AuthRequest): UniResult<AuthResponse> {
@@ -39,15 +53,23 @@ class AuthService(
                 logger.error { it.error }
                 return it
             }
-            // check user existence and insert a new record if not found
+            val userObject = userService.findBySub(googleUserInfoResponse.sub).then {
+                userService.create(googleUserInfoResponse.toUserObject()).then { e ->
+                    logger.error { e.error }
+                    return e
+                }
+            }
+            val (accessToken, refreshToken) = generateTokenPair(userObject as UserObject)
 
-            // generate token pair
+            storeRedisData(
+                userObject.id.toString(), userObject.sub, accessToken, refreshToken, googleAuthResponse.accessToken,
+                googleAuthResponse.idToken
+            )
 
-            // store token pair in redis
             val authReponse = AuthResponse(
-                accessToken = googleAuthResponse.accessToken,
-                idToken = googleAuthResponse.idToken,
-                expiresIn = googleAuthResponse.expiresIn
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                expiresIn = JWT_ACCESS_TOKEN_EXPIRATION_TIME.toInt()
             )
 
             return authReponse.wrapResult()
@@ -86,5 +108,49 @@ class AuthService(
         return googleUserInfoResponse.deserializeWithStatus<GoogleUserInfoResponse>(HttpStatusCode.OK) {
             return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Failed to get google user info").wrapError()
         }.wrapResult()
+    }
+
+    private fun generateTokenPair(userObject: UserObject): Pair<String, String> {
+        val secret =
+            System.getenv("JWT_SECRET") ?: throw IllegalStateException("Missing JWT_SECRET environment variable")
+        val template = JWT.create()
+            .withIssuer(JWT_ISSUER)
+            .withClaim("id", userObject.id)
+            .withClaim("name", userObject.name)
+            .withClaim("email", userObject.email)
+            .withIssuedAt(Date())
+        val accessToken = template
+            .withAudience(JWT_ACCESS_TOKEN_AUDIENCE)
+            .withExpiresAt(Date.from(Instant.now().plusSeconds(JWT_ACCESS_TOKEN_EXPIRATION_TIME)))
+            .sign(Algorithm.HMAC256(secret))
+        val refresh = template
+            .withAudience(JWT_REFRESH_TOKEN_AUDIENCE)
+            .withExpiresAt(Date.from(Instant.now().plusSeconds(JWT_REFRESH_TOKEN_EXPIRATION_TIME)))
+            .sign(Algorithm.HMAC256(secret))
+
+        return Pair(accessToken, refresh)
+    }
+
+    private suspend fun storeRedisData(
+        id: String,
+        sub: String,
+        accessToken: String,
+        refreshToken: String,
+        googleAccessToken: String,
+        googleIdToken: String
+    ) {
+        try {
+            val keyPrefix = "user:$id"
+
+            redis.write(keyPrefix, id)
+            redis.write("$keyPrefix:sub", sub)
+            redis.write("$keyPrefix:accessToken", accessToken)
+            redis.write("$keyPrefix:refreshToken", refreshToken)
+            redis.write("$keyPrefix:googleAccessToken", googleAccessToken)
+            redis.write("$keyPrefix:googleIdToken", googleIdToken)
+        } catch (e: Exception) {
+            logger.error { e.message }
+            throw e
+        }
     }
 }

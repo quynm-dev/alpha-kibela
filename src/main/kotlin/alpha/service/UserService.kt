@@ -2,6 +2,7 @@ package alpha.service
 
 import alpha.common.UniResult
 import alpha.data.dto.response.UserResponse
+import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
 import alpha.extension.wrapError
@@ -20,6 +21,36 @@ class UserService(
             return userRepository.findAll().map { it.toResponse() }.wrapResult()
         } catch (e: ExposedSQLException) {
             val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to get all users")
+            return appErr.wrapError()
+        } catch (e: Exception) {
+            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
+            return appErr.wrapError()
+        }
+    }
+
+    suspend fun create(userObject: UserObject): UniResult<Int> {
+        try {
+            return userRepository.create(userObject).wrapResult()
+        } catch (e: ExposedSQLException) {
+            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to create a user")
+            return appErr.wrapError()
+        } catch (e: Exception) {
+            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
+            return appErr.wrapError()
+        }
+    }
+
+    suspend fun findBySub(sub: String): UniResult<UserObject> {
+        try {
+            val userObject = userRepository.findBySub(sub)
+            if (userObject == null) {
+                val notFoundErr = AppError(CodeFactory.USER.NOT_FOUND, "User not found")
+                return notFoundErr.wrapError()
+            }
+
+            return userObject.wrapResult()
+        } catch (e: ExposedSQLException) {
+            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user")
             return appErr.wrapError()
         } catch (e: Exception) {
             val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")

@@ -7,8 +7,10 @@ import alpha.data.`object`.UserObject
 fun UserEntity.toObject(): UserObject {
     return UserObject(
         id = this.id.value,
-        username = this.username,
+        name = this.name,
         email = this.email,
+        imageUrl = this.imageUrl,
+        sub = this.sub,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt
     )
@@ -16,10 +18,12 @@ fun UserEntity.toObject(): UserObject {
 
 fun UserObject.toResponse(): UserResponse {
     return UserResponse(
-        id = this.id,
-        username = this.username,
+        id = this.id!!,
+        name = this.name,
         email = this.email,
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt
+        imageUrl = this.imageUrl,
+        sub = this.sub,
+        createdAt = this.createdAt!!,
+        updatedAt = this.updatedAt!!
     )
 }

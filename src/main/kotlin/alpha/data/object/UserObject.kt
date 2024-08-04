@@ -3,9 +3,11 @@ package alpha.data.`object`
 import java.time.LocalDateTime
 
 data class UserObject(
-    val id: Int,
-    val username: String,
+    val id: Int? = null,
+    val name: String,
     val email: String,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val imageUrl: String,
+    val sub: String,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null
 )

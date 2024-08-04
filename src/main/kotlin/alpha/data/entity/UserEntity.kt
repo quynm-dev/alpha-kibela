@@ -10,17 +10,19 @@ import org.jetbrains.exposed.sql.javatime.datetime
 class UserEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<UserEntity>(Users)
 
-    var username by Users.username
+    var name by Users.name
     var email by Users.email
-    var password by Users.password
+    var imageUrl by Users.imageUrl
+    val sub by Users.sub
     var createdAt by Users.createdAt
     var updatedAt by Users.updatedAt
 }
 
 object Users : IntIdTable("users") {
-    val username = varchar("username", 50)
-    val email = varchar("email", 100).uniqueIndex()
-    val password = varchar("password", 255)
+    val name = varchar("name", 255)
+    val email = varchar("email", 255).uniqueIndex()
+    val imageUrl = text("image_url")
+    val sub = varchar("sub", 255).uniqueIndex()
     val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
     val updatedAt = datetime("updated_at").defaultExpression(CurrentDateTime)
 }

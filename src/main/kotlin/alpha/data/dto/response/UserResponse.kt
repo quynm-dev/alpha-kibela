@@ -7,8 +7,10 @@ import java.time.LocalDateTime
 @Serializable
 data class UserResponse(
     val id: Int,
-    val username: String,
+    val name: String,
     val email: String,
+    val imageUrl: String,
+    val sub: String,
     @Serializable(with = LocalDateTimeSerializer::class)
     val createdAt: LocalDateTime,
     @Serializable(with = LocalDateTimeSerializer::class)
