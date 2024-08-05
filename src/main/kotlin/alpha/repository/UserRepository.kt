@@ -1,5 +1,6 @@
 package alpha.repository
 
+import alpha.common.ServiceType
 import alpha.data.entity.UserEntity
 import alpha.data.entity.Users
 import alpha.data.`object`.UserObject
@@ -7,6 +8,7 @@ import alpha.helper.transactionWrapper
 import alpha.mapper.toObject
 import mu.KotlinLogging
 import org.jetbrains.exposed.exceptions.ExposedSQLException
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.koin.core.annotation.Singleton
@@ -31,10 +33,15 @@ class UserRepository {
         return transactionWrapper {
             try {
                 Users.insert {
+                    it[username] = userObject.username
+                    it[password] = userObject.password
                     it[name] = userObject.name
                     it[email] = userObject.email
                     it[imageUrl] = userObject.imageUrl
                     it[sub] = userObject.sub
+                    it[serviceType] = userObject.serviceType
+                    it[role] = userObject.role
+                    it[status] = userObject.status
                     it[createdAt] = LocalDateTime.now()
                     it[updatedAt] = LocalDateTime.now()
                 }[Users.id].value
@@ -45,10 +52,13 @@ class UserRepository {
         }
     }
 
-    suspend fun findBySub(sub: String): UserObject? {
+    suspend fun findOAuthUser(serviceType: ServiceType, sub: String): UserObject? {
         return transactionWrapper {
             try {
-                UserEntity.find { Users.sub eq sub }.firstOrNull()?.toObject()
+                Users.selectAll()
+                    .andWhere { Users.serviceType eq serviceType.number }
+                    .andWhere { Users.sub eq sub }
+                    .firstOrNull()?.let { UserEntity.wrapRow(it).toObject() }
             } catch (e: ExposedSQLException) {
                 logger.error { e.message }
                 throw e

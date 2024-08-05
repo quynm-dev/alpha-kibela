@@ -1,6 +1,6 @@
 package alpha.controller
 
-import alpha.data.dto.request.AuthRequest
+import alpha.data.dto.request.OAuthRequestDto
 import alpha.extension.respondError
 import alpha.service.AuthService
 import com.github.michaelbull.result.mapBoth
@@ -15,12 +15,20 @@ fun Route.authController() {
     val authService by inject<AuthService>()
 
     route("/authenticate") {
-        post {
-            val authRequest = call.receive<AuthRequest>()
-            authService.authenticate(authRequest).mapBoth(
+        post("/standard") {
+
+        }
+
+        post("/google") {
+            val authRequestDto = call.receive<OAuthRequestDto>()
+            authService.authenticateGoogle(authRequestDto).mapBoth(
                 success = { call.respond(it) },
                 failure = { call.respondError(it) }
             )
+        }
+
+        post("/facebook") {
+
         }
 
         authenticate("refreshTokenRequired") {

@@ -1,13 +1,15 @@
 package alpha.service
 
+import alpha.common.ServiceType
 import alpha.common.UniResult
 import alpha.config.Redis
 import alpha.config.httpClient.HttpClient
-import alpha.data.dto.request.AuthRequest
-import alpha.data.dto.request.GoogleAuthRequest
-import alpha.data.dto.response.AuthResponse
-import alpha.data.dto.response.GoogleAuthResponse
-import alpha.data.dto.response.GoogleUserInfoResponse
+import alpha.data.dto.request.GoogleAuthRequestDto
+import alpha.data.dto.request.OAuthRequestDto
+import alpha.data.dto.response.AuthResponseDto
+import alpha.data.dto.response.FacebookAuthResponseDto
+import alpha.data.dto.response.GoogleAuthResponseDto
+import alpha.data.dto.response.GoogleUserInfoResponseDto
 import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
@@ -43,17 +45,17 @@ class AuthService(
         const val JWT_REFRESH_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 24 * 30
     }
 
-    suspend fun authenticate(authRequest: AuthRequest): UniResult<AuthResponse> {
+    suspend fun authenticateGoogle(authRequestDto: OAuthRequestDto): UniResult<AuthResponseDto> {
         try {
-            val googleAuthResponse = authenticateGoogle(authRequest).then {
+            val googleAuthResponse = handleAuthenticateGoogle(authRequestDto).then {
                 logger.error { it.error }
                 return it
             }
-            val googleUserInfoResponse = getUserInfoGoogle(googleAuthResponse.accessToken).then {
+            val googleUserInfoResponse = handleUserInfoGoogle(googleAuthResponse.accessToken).then {
                 logger.error { it.error }
                 return it
             }
-            val userObject = userService.findBySub(googleUserInfoResponse.sub).then {
+            val userObject = userService.findOAuthUser(ServiceType.GOOGLE, googleUserInfoResponse.sub).then {
                 userService.create(googleUserInfoResponse.toUserObject()).then { e ->
                     logger.error { e.error }
                     return e
@@ -61,12 +63,9 @@ class AuthService(
             }
             val (accessToken, refreshToken) = generateTokenPair(userObject as UserObject)
 
-            storeRedisData(
-                userObject.id.toString(), userObject.sub, accessToken, refreshToken, googleAuthResponse.accessToken,
-                googleAuthResponse.idToken
-            )
+            storeGoogleUserDataRedis(userObject, accessToken, refreshToken, googleAuthResponse)
 
-            val authResponse = AuthResponse(
+            val authResponse = AuthResponseDto(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
                 expiresIn = JWT_ACCESS_TOKEN_EXPIRATION_TIME.toInt()
@@ -79,14 +78,14 @@ class AuthService(
         }
     }
 
-    private suspend fun authenticateGoogle(authRequest: AuthRequest): UniResult<GoogleAuthResponse> {
+    private suspend fun handleAuthenticateGoogle(authRequest: OAuthRequestDto): UniResult<GoogleAuthResponseDto> {
         val clientId = System.getenv("CLIENT_ID")
             ?: throw IllegalStateException("Missing CLIENT_ID environment variable")
         val clientSecret = System.getenv("CLIENT_SECRET")
             ?: throw IllegalStateException("Missing CLIENT_SECRET environment variable")
         val redirectUri = System.getenv("REDIRECT_URI")
             ?: throw IllegalStateException("Missing REDIRECT_URI environment variable")
-        val googleAuthRequest = GoogleAuthRequest(
+        val googleAuthRequest = GoogleAuthRequestDto(
             code = authRequest.code,
             clientId = clientId,
             clientSecret = clientSecret,
@@ -95,17 +94,17 @@ class AuthService(
         )
 
         return httpClient.post(AUTH_URL, googleAuthRequest)
-            .deserializeWithStatus<GoogleAuthResponse>(HttpStatusCode.OK) {
+            .deserializeWithStatus<GoogleAuthResponseDto>(HttpStatusCode.OK) {
                 return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
             }.wrapResult()
     }
 
-    private suspend fun getUserInfoGoogle(accessToken: String): UniResult<GoogleUserInfoResponse> {
+    private suspend fun handleUserInfoGoogle(accessToken: String): UniResult<GoogleUserInfoResponseDto> {
         val googleUserInfoResponse = httpClient.get(USER_INFO_URL) {
             authorization = "Bearer $accessToken"
         }
 
-        return googleUserInfoResponse.deserializeWithStatus<GoogleUserInfoResponse>(HttpStatusCode.OK) {
+        return googleUserInfoResponse.deserializeWithStatus<GoogleUserInfoResponseDto>(HttpStatusCode.OK) {
             return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Failed to get google user info").wrapError()
         }.wrapResult()
     }
@@ -131,23 +130,57 @@ class AuthService(
         return Pair(accessToken, refreshToken)
     }
 
-    private suspend fun storeRedisData(
-        id: String,
-        sub: String,
+    private suspend fun storeGoogleUserDataRedis(
+        userObject: UserObject,
         accessToken: String,
         refreshToken: String,
-        googleAccessToken: String,
-        googleIdToken: String
+        googleAuthResponse: GoogleAuthResponseDto
     ) {
         try {
+            val id = userObject.id.toString()
+            val keyPrefix = "user:$id"
+
+            storeUserDataRedis(userObject, accessToken, refreshToken)
+
+            redis.write("$keyPrefix:google:accessToken", googleAuthResponse.accessToken)
+            redis.write("$keyPrefix:google:idToken", googleAuthResponse.idToken)
+            redis.write("$keyPrefix:google:expiresIn", googleAuthResponse.expiresIn.toString())
+        } catch (e: Exception) {
+            logger.error { e.message }
+            throw e
+        }
+    }
+
+    private suspend fun storeFacebookUserDataRedis(
+        userObject: UserObject,
+        accessToken: String,
+        refreshToken: String,
+        facebookAuthResponse: FacebookAuthResponseDto
+    ) {
+        try {
+            val id = userObject.id.toString()
+            val keyPrefix = "user:$id"
+
+            storeUserDataRedis(userObject, accessToken, refreshToken)
+
+            redis.write("$keyPrefix:facebook:accessToken", facebookAuthResponse.accessToken)
+            redis.write("$keyPrefix:facebook:expiresIn", facebookAuthResponse.expiresIn.toString())
+        } catch (e: Exception) {
+            logger.error { e.message }
+            throw e
+        }
+    }
+
+    private suspend fun storeUserDataRedis(userObject: UserObject, accessToken: String, refreshToken: String) {
+        try {
+            val id = userObject.id.toString()
             val keyPrefix = "user:$id"
 
             redis.write(keyPrefix, id)
-            redis.write("$keyPrefix:sub", sub)
+            redis.write("$keyPrefix:sub", userObject.sub.toString())
+            redis.write("$keyPrefix:serviceType", userObject.serviceType.toString())
             redis.write("$keyPrefix:accessToken", accessToken)
             redis.write("$keyPrefix:refreshToken", refreshToken)
-            redis.write("$keyPrefix:googleAccessToken", googleAccessToken)
-            redis.write("$keyPrefix:googleIdToken", googleIdToken)
         } catch (e: Exception) {
             logger.error { e.message }
             throw e

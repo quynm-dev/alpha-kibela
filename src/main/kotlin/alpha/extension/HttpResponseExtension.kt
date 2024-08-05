@@ -11,6 +11,7 @@ suspend inline fun <reified T : Any> HttpResponse.deserializeWithStatus(
     if (status == statusCode) {
         return Json.decodeFromString<T>(this.bodyAsText())
     }
+
     shortCircuit(this, statusCode)
     throw IllegalStateException("Illegal state")
 }

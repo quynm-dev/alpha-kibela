@@ -13,7 +13,8 @@ import java.util.*
 
 fun Application.configureAuthentication() {
     install(Authentication) {
-        val secret = System.getenv("JWT_SECRET") ?: throw IllegalStateException("Missing JWT_SECRET environment variable")
+        val secret = System.getenv("JWT_SECRET")
+            ?: throw IllegalStateException("Missing JWT_SECRET environment variable")
         fun createTemplate() = JWT.require(Algorithm.HMAC256(secret)).withIssuer(AuthService.JWT_ISSUER)
 
         jwt("accessTokenRequired") {
@@ -46,7 +47,7 @@ fun Application.configureAuthentication() {
 
 val AuthenticationHeaderChallenge = createRouteScopedPlugin("AuthenticationHeaderPlugin") {
     on(AuthenticationChecked) {
-        if(it.authentication.allErrors.isNotEmpty()) {
+        if (it.authentication.allErrors.isNotEmpty()) {
             it.respondError(AppError(CodeFactory.GENERAL.UNAUTHORIZED, "Unauthorized"))
         }
     }

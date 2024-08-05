@@ -1,7 +1,8 @@
 package alpha.service
 
+import alpha.common.ServiceType
 import alpha.common.UniResult
-import alpha.data.dto.response.UserResponse
+import alpha.data.dto.response.UserResponseDto
 import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
@@ -16,7 +17,7 @@ import org.koin.core.annotation.Singleton
 class UserService(
     private val userRepository: UserRepository
 ) {
-    suspend fun findAll(): UniResult<List<UserResponse>> {
+    suspend fun findAll(): UniResult<List<UserResponseDto>> {
         try {
             return userRepository.findAll().map { it.toResponse() }.wrapResult()
         } catch (e: ExposedSQLException) {
@@ -40,9 +41,9 @@ class UserService(
         }
     }
 
-    suspend fun findBySub(sub: String): UniResult<UserObject> {
+    suspend fun findOAuthUser(serviceType: ServiceType, sub: String): UniResult<UserObject> {
         try {
-            val userObject = userRepository.findBySub(sub)
+            val userObject = userRepository.findOAuthUser(serviceType, sub)
             if (userObject == null) {
                 val notFoundErr = AppError(CodeFactory.USER.NOT_FOUND, "User not found")
                 return notFoundErr.wrapError()

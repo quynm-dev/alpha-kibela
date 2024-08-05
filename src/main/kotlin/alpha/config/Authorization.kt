@@ -18,7 +18,6 @@ class RoleRouteSelector : RouteSelector() {
 
 class RbacConfiguration {
     val requiredRoles = mutableSetOf<Role>()
-
     fun addRequireRoles(vararg roles: Role) {
         requiredRoles.addAll(roles)
     }
