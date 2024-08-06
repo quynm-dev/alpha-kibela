@@ -55,17 +55,12 @@ class AuthService(
                 logger.error { it.error }
                 return it
             }
-            val userObject = userService.findOAuthUser(ServiceType.GOOGLE, googleUserInfoResponse.sub).then {
-                val id = userService.create(googleUserInfoResponse.toUserObject()).then { e ->
-                    logger.error { e.error }
-                    return e
-                }
-
-                userService.findById(id).then { e ->
-                    logger.error { e.error }
-                    return e
-                }
-            }
+            val userObject =
+                userService.findOAuthUserAndCreateIfNotExist(ServiceType.GOOGLE, googleUserInfoResponse.toUserObject())
+                    .then {
+                        logger.error { it.error }
+                        return it
+                    }
             val (accessToken, refreshToken) = generateTokenPair(userObject)
 
             storeGoogleUserDataRedis(userObject, accessToken, refreshToken, googleAuthResponse)
@@ -93,16 +88,12 @@ class AuthService(
                 logger.error { it.error }
                 return it
             }
-            val userObject = userService.findOAuthUser(ServiceType.FACEBOOK, facebookUserInfoResponse.id).then {
-                val id = userService.create(facebookUserInfoResponse.toUserObject()).then { e ->
-                    logger.error { e.error }
-                    return e
-                }
-
-                userService.findById(id).then { e ->
-                    logger.error { e.error }
-                    return e
-                }
+            val userObject = userService.findOAuthUserAndCreateIfNotExist(
+                ServiceType.FACEBOOK,
+                facebookUserInfoResponse.toUserObject()
+            ).then {
+                logger.error { it.error }
+                return it
             }
             val (accessToken, refreshToken) = generateTokenPair(userObject)
 

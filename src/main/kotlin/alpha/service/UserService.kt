@@ -6,12 +6,16 @@ import alpha.data.dto.response.UserResponseDto
 import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
+import alpha.extension.then
 import alpha.extension.wrapError
 import alpha.extension.wrapResult
 import alpha.mapper.toResponse
 import alpha.repository.UserRepository
+import mu.KotlinLogging
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.koin.core.annotation.Singleton
+
+private val logger = KotlinLogging.logger {}
 
 @Singleton
 class UserService(
@@ -59,12 +63,20 @@ class UserService(
         }
     }
 
-    suspend fun findOAuthUser(serviceType: ServiceType, sub: String): UniResult<UserObject> {
+    suspend fun findOAuthUserAndCreateIfNotExist(
+        serviceType: ServiceType,
+        newUserObject: UserObject
+    ): UniResult<UserObject> {
         try {
+            val sub = newUserObject.sub!!
             val userObject = userRepository.findOAuthUser(serviceType, sub)
             if (userObject == null) {
-                val notFoundErr = AppError(CodeFactory.USER.NOT_FOUND, "User not found")
-                return notFoundErr.wrapError()
+                val id = create(newUserObject).then {
+                    logger.error { it.error }
+                    return it
+                }
+
+                return findById(id)
             }
 
             return userObject.wrapResult()
