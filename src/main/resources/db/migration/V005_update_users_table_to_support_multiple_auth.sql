@@ -1,9 +1,0 @@
-ALTER TABLE users
-    ADD COLUMN username VARCHAR(255),
-    ADD COLUMN password VARCHAR(255),
-    ADD COLUMN role TINYINT NOT NULL,
-    MODIFY email VARCHAR (255),
-    MODIFY sub VARCHAR (255),
-    MODIFY image_url TEXT,
-    ADD COLUMN service_type TINYINT NOT NULL,
-    ADD COLUMN status TINYINT NOT NULL
