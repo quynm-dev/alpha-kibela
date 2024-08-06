@@ -4,12 +4,10 @@ import alpha.common.ServiceType
 import alpha.common.UniResult
 import alpha.config.Redis
 import alpha.config.httpClient.HttpClient
+import alpha.data.dto.request.FacebookAuthRequestDto
 import alpha.data.dto.request.GoogleAuthRequestDto
 import alpha.data.dto.request.OAuthRequestDto
-import alpha.data.dto.response.AuthResponseDto
-import alpha.data.dto.response.FacebookAuthResponseDto
-import alpha.data.dto.response.GoogleAuthResponseDto
-import alpha.data.dto.response.GoogleUserInfoResponseDto
+import alpha.data.dto.response.*
 import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
@@ -35,9 +33,11 @@ class AuthService(
     private val httpClient: HttpClient
 ) {
     companion object {
-        const val AUTH_URL = "oauth2.googleapis.com/token"
-        const val USER_INFO_URL = "www.googleapis.com/oauth2/v3/userinfo"
-        const val GRANT_TYPE = "authorization_code"
+        const val GOOGLE_AUTH_URL = "oauth2.googleapis.com/token"
+        const val GOOGLE_USER_INFO_URL = "www.googleapis.com/oauth2/v3/userinfo"
+        const val GOOGLE_GRANT_TYPE = "authorization_code"
+        const val FACEBOOK_AUTH_URL = "graph.facebook.com/v12.0/oauth/access_token"
+        const val FACEBOOK_USER_INFO_URL = "graph.facebook.com/me"
         const val JWT_ISSUER = "alpha-kibela"
         const val JWT_ACCESS_TOKEN_AUDIENCE = "alpha-kibela-access-token"
         const val JWT_REFRESH_TOKEN_AUDIENCE = "alpha-kibela-refresh-token"
@@ -56,12 +56,17 @@ class AuthService(
                 return it
             }
             val userObject = userService.findOAuthUser(ServiceType.GOOGLE, googleUserInfoResponse.sub).then {
-                userService.create(googleUserInfoResponse.toUserObject()).then { e ->
+                val id = userService.create(googleUserInfoResponse.toUserObject()).then { e ->
+                    logger.error { e.error }
+                    return e
+                }
+
+                userService.findById(id).then { e ->
                     logger.error { e.error }
                     return e
                 }
             }
-            val (accessToken, refreshToken) = generateTokenPair(userObject as UserObject)
+            val (accessToken, refreshToken) = generateTokenPair(userObject)
 
             storeGoogleUserDataRedis(userObject, accessToken, refreshToken, googleAuthResponse)
 
@@ -78,11 +83,49 @@ class AuthService(
         }
     }
 
+    suspend fun authenticateFacebook(authRequestDto: OAuthRequestDto): UniResult<AuthResponseDto> {
+        try {
+            val facebookAuthResponse = handleAuthenticateFacebook(authRequestDto).then {
+                logger.error { it.error }
+                return it
+            }
+            val facebookUserInfoResponse = handleUserInfoFacebook(facebookAuthResponse.accessToken).then {
+                logger.error { it.error }
+                return it
+            }
+            val userObject = userService.findOAuthUser(ServiceType.FACEBOOK, facebookUserInfoResponse.id).then {
+                val id = userService.create(facebookUserInfoResponse.toUserObject()).then { e ->
+                    logger.error { e.error }
+                    return e
+                }
+
+                userService.findById(id).then { e ->
+                    logger.error { e.error }
+                    return e
+                }
+            }
+            val (accessToken, refreshToken) = generateTokenPair(userObject)
+
+            storeFacebookUserDataRedis(userObject, accessToken, refreshToken, facebookAuthResponse)
+
+            val authResponse = AuthResponseDto(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                expiresIn = JWT_ACCESS_TOKEN_EXPIRATION_TIME.toInt()
+            )
+
+            return authResponse.wrapResult()
+        } catch (e: Exception) {
+            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
+            return appErr.wrapError()
+        }
+    }
+
     private suspend fun handleAuthenticateGoogle(authRequest: OAuthRequestDto): UniResult<GoogleAuthResponseDto> {
-        val clientId = System.getenv("CLIENT_ID")
-            ?: throw IllegalStateException("Missing CLIENT_ID environment variable")
-        val clientSecret = System.getenv("CLIENT_SECRET")
-            ?: throw IllegalStateException("Missing CLIENT_SECRET environment variable")
+        val clientId = System.getenv("GOOGLE_CLIENT_ID")
+            ?: throw IllegalStateException("Missing GOOGLE_CLIENT_ID environment variable")
+        val clientSecret = System.getenv("GOOGLE_CLIENT_SECRET")
+            ?: throw IllegalStateException("Missing GOOGLE_CLIENT_SECRET environment variable")
         val redirectUri = System.getenv("REDIRECT_URI")
             ?: throw IllegalStateException("Missing REDIRECT_URI environment variable")
         val googleAuthRequest = GoogleAuthRequestDto(
@@ -90,22 +133,55 @@ class AuthService(
             clientId = clientId,
             clientSecret = clientSecret,
             redirectUri = redirectUri,
-            grantType = GRANT_TYPE
+            grantType = GOOGLE_GRANT_TYPE
         )
 
-        return httpClient.post(AUTH_URL, googleAuthRequest)
+        return httpClient.post(GOOGLE_AUTH_URL, googleAuthRequest)
             .deserializeWithStatus<GoogleAuthResponseDto>(HttpStatusCode.OK) {
                 return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
             }.wrapResult()
     }
 
+    private suspend fun handleAuthenticateFacebook(authRequestDto: OAuthRequestDto): UniResult<FacebookAuthResponseDto> {
+        val clientId = System.getenv("FACEBOOK_CLIENT_ID")
+            ?: throw IllegalStateException("Missing FACEBOOK_CLIENT_ID environment variable")
+        val clientSecret = System.getenv("FACEBOOK_CLIENT_SECRET")
+            ?: throw IllegalStateException("Missing FACEBOOK_CLIENT_SECRET environment variable")
+        val redirectUri = System.getenv("REDIRECT_URI")
+            ?: throw IllegalStateException("Missing REDIRECT_URI environment variable")
+        val facebookAuthRequest = FacebookAuthRequestDto(
+            code = authRequestDto.code,
+            clientId = clientId,
+            clientSecret = clientSecret,
+            redirectUri = redirectUri
+        )
+
+        return httpClient.post(FACEBOOK_AUTH_URL, facebookAuthRequest)
+            .deserializeWithStatus<FacebookAuthResponseDto>(HttpStatusCode.OK) {
+                return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
+            }.wrapResult()
+    }
+
     private suspend fun handleUserInfoGoogle(accessToken: String): UniResult<GoogleUserInfoResponseDto> {
-        val googleUserInfoResponse = httpClient.get(USER_INFO_URL) {
+        val googleUserInfoResponse = httpClient.get(GOOGLE_USER_INFO_URL) {
             authorization = "Bearer $accessToken"
         }
 
         return googleUserInfoResponse.deserializeWithStatus<GoogleUserInfoResponseDto>(HttpStatusCode.OK) {
             return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Failed to get google user info").wrapError()
+        }.wrapResult()
+    }
+
+    private suspend fun handleUserInfoFacebook(accessToken: String): UniResult<FacebookUserInfoResponseDto> {
+        val facebookUserInfoResponse = httpClient.get(FACEBOOK_USER_INFO_URL) {
+            url {
+                authorization = "Bearer $accessToken"
+                parameters.append("fields", "id,name,picture,email")
+            }
+        }
+
+        return facebookUserInfoResponse.deserializeWithStatus<FacebookUserInfoResponseDto>(HttpStatusCode.OK) {
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Failed to get facebook user info").wrapError()
         }.wrapResult()
     }
 

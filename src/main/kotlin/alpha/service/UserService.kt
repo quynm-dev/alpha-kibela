@@ -41,6 +41,24 @@ class UserService(
         }
     }
 
+    suspend fun findById(id: Int): UniResult<UserObject> {
+        try {
+            val userObject = userRepository.findById(id)
+            if (userObject == null) {
+                val notFoundErr = AppError(CodeFactory.USER.NOT_FOUND, "User not found")
+                return notFoundErr.wrapError()
+            }
+
+            return userObject.wrapResult()
+        } catch (e: ExposedSQLException) {
+            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user with id: $id")
+            return appErr.wrapError()
+        } catch (e: Exception) {
+            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
+            return appErr.wrapError()
+        }
+    }
+
     suspend fun findOAuthUser(serviceType: ServiceType, sub: String): UniResult<UserObject> {
         try {
             val userObject = userRepository.findOAuthUser(serviceType, sub)

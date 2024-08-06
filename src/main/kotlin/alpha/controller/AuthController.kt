@@ -28,7 +28,11 @@ fun Route.authController() {
         }
 
         post("/facebook") {
-
+            val authRequestDto = call.receive<OAuthRequestDto>()
+            authService.authenticateFacebook(authRequestDto).mapBoth(
+                success = { call.respond(it) },
+                failure = { call.respondError(it) }
+            )
         }
 
         authenticate("refreshTokenRequired") {

@@ -52,6 +52,17 @@ class UserRepository {
         }
     }
 
+    suspend fun findById(id: Int): UserObject? {
+        return transactionWrapper {
+            try {
+                UserEntity.findById(id)?.toObject()
+            } catch (e: ExposedSQLException) {
+                logger.error { e.message }
+                throw e
+            }
+        }
+    }
+
     suspend fun findOAuthUser(serviceType: ServiceType, sub: String): UserObject? {
         return transactionWrapper {
             try {
