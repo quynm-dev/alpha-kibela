@@ -63,6 +63,19 @@ class UserRepository {
         }
     }
 
+    suspend fun findByUsername(username: String): UserObject? {
+        return transactionWrapper {
+            try {
+                Users.selectAll()
+                    .andWhere { Users.username eq username }
+                    .firstOrNull()?.let { UserEntity.wrapRow(it).toObject(withPassword = true) }
+            } catch (e: ExposedSQLException) {
+                logger.error { e.message }
+                throw e
+            }
+        }
+    }
+
     suspend fun findOAuthUser(serviceType: ServiceType, sub: String): UserObject? {
         return transactionWrapper {
             try {

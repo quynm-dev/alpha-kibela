@@ -7,6 +7,7 @@ import alpha.config.httpClient.HttpClient
 import alpha.data.dto.request.FacebookAuthRequestDto
 import alpha.data.dto.request.GoogleAuthRequestDto
 import alpha.data.dto.request.OAuthRequestDto
+import alpha.data.dto.request.StandardAuthRequestDto
 import alpha.data.dto.response.*
 import alpha.data.`object`.UserObject
 import alpha.error.AppError
@@ -18,6 +19,7 @@ import alpha.extension.wrapResult
 import alpha.mapper.toUserObject
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.toxicbakery.bcrypt.Bcrypt
 import io.ktor.http.*
 import mu.KotlinLogging
 import org.koin.core.annotation.Singleton
@@ -43,6 +45,35 @@ class AuthService(
         const val JWT_REFRESH_TOKEN_AUDIENCE = "alpha-kibela-refresh-token"
         const val JWT_ACCESS_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 1
         const val JWT_REFRESH_TOKEN_EXPIRATION_TIME: Long = 60 * 60 * 24 * 30
+    }
+
+    suspend fun authenticateStandard(authRequestDto: StandardAuthRequestDto): UniResult<AuthResponseDto> {
+        try {
+            val userObject = userService.findByUsername(authRequestDto.username).then {
+                logger.error { it.error }
+                return it
+            }
+            val isPasswordValid = Bcrypt.verify(authRequestDto.password, userObject.password.toString().encodeToByteArray())
+            if (!isPasswordValid) {
+                val appErr = AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized")
+                return appErr.wrapError()
+            }
+
+            val (accessToken, refreshToken) = generateTokenPair(userObject)
+
+            storeUserDataRedis(userObject, accessToken, refreshToken)
+
+            val authResponse = AuthResponseDto(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                expiresIn = JWT_ACCESS_TOKEN_EXPIRATION_TIME.toInt()
+            )
+
+            return authResponse.wrapResult()
+        } catch (e: Exception) {
+            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
+            return appErr.wrapError()
+        }
     }
 
     suspend fun authenticateGoogle(authRequestDto: OAuthRequestDto): UniResult<AuthResponseDto> {

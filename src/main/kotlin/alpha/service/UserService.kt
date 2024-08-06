@@ -11,6 +11,7 @@ import alpha.extension.wrapError
 import alpha.extension.wrapResult
 import alpha.mapper.toResponse
 import alpha.repository.UserRepository
+import com.github.michaelbull.result.unwrapError
 import mu.KotlinLogging
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.koin.core.annotation.Singleton
@@ -33,8 +34,17 @@ class UserService(
         }
     }
 
-    suspend fun create(userObject: UserObject): UniResult<Int> {
+    suspend fun create(userObject: UserObject, isOAuthUser: Boolean? = true): UniResult<Int> {
         try {
+            if(isOAuthUser == false) {
+                findByUsername(userObject.username!!).then { e ->
+                    if (e.unwrapError().code != CodeFactory.USER.NOT_FOUND) {
+                        logger.error { e.error }
+                        return e
+                    }
+                }
+            }
+
             return userRepository.create(userObject).wrapResult()
         } catch (e: ExposedSQLException) {
             val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to create a user")
@@ -56,6 +66,24 @@ class UserService(
             return userObject.wrapResult()
         } catch (e: ExposedSQLException) {
             val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user with id: $id")
+            return appErr.wrapError()
+        } catch (e: Exception) {
+            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
+            return appErr.wrapError()
+        }
+    }
+
+    suspend fun findByUsername(username: String): UniResult<UserObject> {
+        try {
+            val userObject = userRepository.findByUsername(username)
+            if (userObject == null) {
+                val notFoundErr = AppError(CodeFactory.USER.NOT_FOUND, "User not found")
+                return notFoundErr.wrapError()
+            }
+
+            return userObject.wrapResult()
+        } catch (e: ExposedSQLException) {
+            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user with username: $username")
             return appErr.wrapError()
         } catch (e: Exception) {
             val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")

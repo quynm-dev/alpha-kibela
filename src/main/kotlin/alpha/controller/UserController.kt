@@ -1,5 +1,7 @@
 package alpha.controller
 
+import alpha.common.Role
+import alpha.config.withRoles
 import alpha.extension.respondError
 import alpha.service.UserService
 import com.github.michaelbull.result.mapBoth
@@ -12,11 +14,13 @@ fun Route.userController() {
     val userService by inject<UserService>()
 
     route("/users") {
-        get {
-            userService.findAll().mapBoth(
-                success = { call.respond(it) },
-                failure = { call.respondError(it) }
-            )
+        withRoles(Role.ADMIN) {
+            get {
+                userService.findAll().mapBoth(
+                    success = { call.respond(it) },
+                    failure = { call.respondError(it) }
+                )
+            }
         }
     }
 }

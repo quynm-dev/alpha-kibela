@@ -79,6 +79,9 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("io.github.microutils:kotlin-logging-jvm:$microLoggingVersion")
 
+    // Hashing
+    implementation("com.ToxicBakery.library.bcrypt:bcrypt:+")
+
     // Redis
     implementation("redis.clients:jedis:$redisVersion")
 

@@ -1,6 +1,7 @@
 package alpha.controller
 
 import alpha.data.dto.request.OAuthRequestDto
+import alpha.data.dto.request.StandardAuthRequestDto
 import alpha.extension.respondError
 import alpha.service.AuthService
 import com.github.michaelbull.result.mapBoth
@@ -11,12 +12,16 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
 
-fun Route.authController() {
+fun Route.authenticationController() {
     val authService by inject<AuthService>()
 
     route("/authenticate") {
         post("/standard") {
-
+            val authRequestDto = call.receive<StandardAuthRequestDto>()
+            authService.authenticateStandard(authRequestDto).mapBoth(
+                success = { call.respond(it) },
+                failure = { call.respondError(it) }
+            )
         }
 
         post("/google") {
