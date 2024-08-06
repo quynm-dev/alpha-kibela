@@ -5,6 +5,7 @@ import alpha.data.dto.request.StandardAuthRequestDto
 import alpha.extension.respondError
 import alpha.service.AuthService
 import com.github.michaelbull.result.mapBoth
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -19,7 +20,12 @@ fun Route.authenticationController() {
         post("/standard") {
             val authRequestDto = call.receive<StandardAuthRequestDto>()
             authService.authenticateStandard(authRequestDto).mapBoth(
-                success = { call.respond(it) },
+                success = {
+                    call.response.cookies.append("accessToken", it.accessToken)
+                    call.response.cookies.append("refreshToken", it.refreshToken)
+                    call.response.cookies.append("expiresIn", it.expiresIn.toString())
+                    call.respond(HttpStatusCode.OK)
+                },
                 failure = { call.respondError(it) }
             )
         }
@@ -27,7 +33,12 @@ fun Route.authenticationController() {
         post("/google") {
             val authRequestDto = call.receive<OAuthRequestDto>()
             authService.authenticateGoogle(authRequestDto).mapBoth(
-                success = { call.respond(it) },
+                success = {
+                    call.response.cookies.append("accessToken", it.accessToken)
+                    call.response.cookies.append("refreshToken", it.refreshToken)
+                    call.response.cookies.append("expiresIn", it.expiresIn.toString())
+                    call.respond(HttpStatusCode.OK)
+                },
                 failure = { call.respondError(it) }
             )
         }
@@ -35,7 +46,12 @@ fun Route.authenticationController() {
         post("/facebook") {
             val authRequestDto = call.receive<OAuthRequestDto>()
             authService.authenticateFacebook(authRequestDto).mapBoth(
-                success = { call.respond(it) },
+                success = {
+                    call.response.cookies.append("accessToken", it.accessToken)
+                    call.response.cookies.append("refreshToken", it.refreshToken)
+                    call.response.cookies.append("expiresIn", it.expiresIn.toString())
+                    call.respond(HttpStatusCode.OK)
+                },
                 failure = { call.respondError(it) }
             )
         }

@@ -53,7 +53,8 @@ class AuthService(
                 logger.error { it.error }
                 return it
             }
-            val isPasswordValid = Bcrypt.verify(authRequestDto.password, userObject.password.toString().encodeToByteArray())
+            val isPasswordValid =
+                Bcrypt.verify(authRequestDto.password, userObject.password.toString().encodeToByteArray())
             if (!isPasswordValid) {
                 val appErr = AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized")
                 return appErr.wrapError()

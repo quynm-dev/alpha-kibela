@@ -36,7 +36,7 @@ class UserService(
 
     suspend fun create(userObject: UserObject, isOAuthUser: Boolean? = true): UniResult<Int> {
         try {
-            if(isOAuthUser == false) {
+            if (isOAuthUser == false) {
                 findByUsername(userObject.username!!).then { e ->
                     if (e.unwrapError().code != CodeFactory.USER.NOT_FOUND) {
                         logger.error { e.error }
