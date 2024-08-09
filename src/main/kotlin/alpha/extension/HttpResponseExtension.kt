@@ -8,8 +8,9 @@ suspend inline fun <reified T : Any> HttpResponse.deserializeWithStatus(
     statusCode: HttpStatusCode,
     shortCircuit: HttpResponse.(HttpStatusCode) -> Unit
 ): T {
+    val j = Json { ignoreUnknownKeys = true }
     if (status == statusCode) {
-        return Json.decodeFromString<T>(this.bodyAsText())
+        return j.decodeFromString<T>(this.bodyAsText())
     }
 
     shortCircuit(this, statusCode)
