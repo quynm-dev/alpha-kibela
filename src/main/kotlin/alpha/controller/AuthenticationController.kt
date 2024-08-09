@@ -1,11 +1,13 @@
 package alpha.controller
 
+import alpha.common.ServiceType
 import alpha.data.dto.request.OAuthRequestDto
 import alpha.data.dto.request.StandardAuthRequestDto
+import alpha.error.AppError
+import alpha.error.CodeFactory
 import alpha.extension.respondError
 import alpha.service.AuthService
 import com.github.michaelbull.result.mapBoth
-import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -20,38 +22,20 @@ fun Route.authenticationController() {
         post("/standard") {
             val authRequestDto = call.receive<StandardAuthRequestDto>()
             authService.authenticateStandard(authRequestDto).mapBoth(
-                success = {
-                    call.response.cookies.append("accessToken", it.accessToken)
-                    call.response.cookies.append("refreshToken", it.refreshToken)
-                    call.response.cookies.append("expiresIn", it.expiresIn.toString())
-                    call.respond(HttpStatusCode.OK)
-                },
+                success = { call.respond(it) },
                 failure = { call.respondError(it) }
             )
         }
 
-        post("/google") {
+        post("/oauth") {
             val authRequestDto = call.receive<OAuthRequestDto>()
-            authService.authenticateGoogle(authRequestDto).mapBoth(
-                success = {
-                    call.response.cookies.append("accessToken", it.accessToken)
-                    call.response.cookies.append("refreshToken", it.refreshToken)
-                    call.response.cookies.append("expiresIn", it.expiresIn.toString())
-                    call.respond(HttpStatusCode.OK)
-                },
-                failure = { call.respondError(it) }
-            )
-        }
-
-        post("/facebook") {
-            val authRequestDto = call.receive<OAuthRequestDto>()
-            authService.authenticateFacebook(authRequestDto).mapBoth(
-                success = {
-                    call.response.cookies.append("accessToken", it.accessToken)
-                    call.response.cookies.append("refreshToken", it.refreshToken)
-                    call.response.cookies.append("expiresIn", it.expiresIn.toString())
-                    call.respond(HttpStatusCode.OK)
-                },
+            val authResult = when (authRequestDto.provider) {
+                ServiceType.GOOGLE -> authService.authenticateGoogle(authRequestDto)
+                ServiceType.FACEBOOK -> authService.authenticateFacebook(authRequestDto)
+                else -> return@post call.respondError(AppError(CodeFactory.GENERAL.BAD_REQUEST, "Invalid provider"))
+            }
+            authResult.mapBoth(
+                success = { call.respond(it) },
                 failure = { call.respondError(it) }
             )
         }

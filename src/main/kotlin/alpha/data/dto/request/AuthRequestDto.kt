@@ -1,5 +1,6 @@
 package alpha.data.dto.request
 
+import alpha.common.ServiceType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -11,7 +12,8 @@ data class StandardAuthRequestDto(
 
 @Serializable
 data class OAuthRequestDto(
-    val code: String
+    val code: String,
+    val provider: ServiceType
 )
 
 @Serializable
