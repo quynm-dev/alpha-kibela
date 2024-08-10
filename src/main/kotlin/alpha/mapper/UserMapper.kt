@@ -7,6 +7,7 @@ import alpha.data.dto.request.CreateUserRequestDto
 import alpha.data.dto.response.UserResponseDto
 import alpha.data.entity.UserEntity
 import alpha.data.`object`.UserObject
+import alpha.helper.getEnvOrError
 import com.toxicbakery.bcrypt.Bcrypt
 
 fun UserEntity.toObject(withPassword: Boolean? = false): UserObject {
@@ -27,7 +28,7 @@ fun UserEntity.toObject(withPassword: Boolean? = false): UserObject {
 }
 
 fun CreateUserRequestDto.toObject(): UserObject {
-    val salt = System.getenv("SALT") ?: throw IllegalStateException("Missing SALT environment variable")
+    val salt = getEnvOrError("SALT")
     return UserObject(
         username = this.username,
         password = Bcrypt.hash(this.password, salt.toInt()).decodeToString(),

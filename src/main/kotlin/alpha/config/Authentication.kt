@@ -3,6 +3,7 @@ package alpha.config
 import alpha.error.AppError
 import alpha.error.CodeFactory
 import alpha.extension.respondError
+import alpha.helper.getEnvOrError
 import alpha.service.AuthService
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -13,8 +14,7 @@ import java.util.*
 
 fun Application.configureAuthentication() {
     install(Authentication) {
-        val secret = System.getenv("JWT_SECRET")
-            ?: throw IllegalStateException("Missing JWT_SECRET environment variable")
+        val secret = getEnvOrError("JWT_SECRET")
         fun createTemplate() = JWT.require(Algorithm.HMAC256(secret)).withIssuer(AuthService.JWT_ISSUER)
 
         jwt("accessTokenRequired") {

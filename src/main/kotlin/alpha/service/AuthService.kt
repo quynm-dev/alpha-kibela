@@ -16,6 +16,7 @@ import alpha.extension.deserializeWithStatus
 import alpha.extension.then
 import alpha.extension.wrapError
 import alpha.extension.wrapResult
+import alpha.helper.getEnvOrError
 import alpha.mapper.toUserObject
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -145,12 +146,9 @@ class AuthService(
     }
 
     private suspend fun handleAuthenticateGoogle(authRequest: OAuthRequestDto): UniResult<GoogleAuthResponseDto> {
-        val clientId = System.getenv("GOOGLE_CLIENT_ID")
-            ?: throw IllegalStateException("Missing GOOGLE_CLIENT_ID environment variable")
-        val clientSecret = System.getenv("GOOGLE_CLIENT_SECRET")
-            ?: throw IllegalStateException("Missing GOOGLE_CLIENT_SECRET environment variable")
-        val redirectUri = System.getenv("REDIRECT_URI")
-            ?: throw IllegalStateException("Missing REDIRECT_URI environment variable")
+        val clientId = getEnvOrError("GOOGLE_CLIENT_ID")
+        val clientSecret = getEnvOrError("GOOGLE_CLIENT_SECRET")
+        val redirectUri = getEnvOrError("REDIRECT_URI")
         val googleAuthRequest = GoogleAuthRequestDto(
             code = authRequest.code,
             clientId = clientId,
@@ -166,12 +164,9 @@ class AuthService(
     }
 
     private suspend fun handleAuthenticateFacebook(authRequestDto: OAuthRequestDto): UniResult<FacebookAuthResponseDto> {
-        val clientId = System.getenv("FACEBOOK_CLIENT_ID")
-            ?: throw IllegalStateException("Missing FACEBOOK_CLIENT_ID environment variable")
-        val clientSecret = System.getenv("FACEBOOK_CLIENT_SECRET")
-            ?: throw IllegalStateException("Missing FACEBOOK_CLIENT_SECRET environment variable")
-        val redirectUri = System.getenv("REDIRECT_URI")
-            ?: throw IllegalStateException("Missing REDIRECT_URI environment variable")
+        val clientId = getEnvOrError("FACEBOOK_CLIENT_ID")
+        val clientSecret = getEnvOrError("FACEBOOK_CLIENT_SECRET")
+        val redirectUri = getEnvOrError("REDIRECT_URI")
         val facebookAuthRequest = FacebookAuthRequestDto(
             code = authRequestDto.code,
             clientId = clientId,
@@ -209,8 +204,7 @@ class AuthService(
     }
 
     private fun generateTokenPair(userObject: UserObject): Pair<String, String> {
-        val secret =
-            System.getenv("JWT_SECRET") ?: throw IllegalStateException("Missing JWT_SECRET environment variable")
+        val secret = getEnvOrError("JWT_SECRET")
         val template = JWT.create()
             .withIssuer(JWT_ISSUER)
             .withClaim("id", userObject.id)

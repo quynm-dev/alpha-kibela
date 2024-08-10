@@ -1,5 +1,8 @@
 package alpha.config
 
+import alpha.helper.getEnv
+import alpha.helper.getEnvOrDefaultInt
+import alpha.helper.getEnvOrError
 import io.ktor.server.sessions.*
 import mu.KotlinLogging
 import org.koin.core.annotation.Singleton
@@ -19,9 +22,9 @@ class Redis : SessionStorage {
     private val jedisPool: JedisPool
 
     init {
-        val host = System.getenv("REDIS_HOST") ?: throw IllegalStateException("Missing REDIS_HOST environment variable")
-        val timeout = System.getenv("REDIS_TIMEOUT")?.toInt() ?: 2000
-        val password = System.getenv("REDIS_PASSWORD")
+        val host = getEnvOrError("REDIS_HOST")
+        val timeout = getEnvOrDefaultInt("REDIS_TIMEOUT", 2000)
+        val password = getEnv("REDIS_PASSWORD")
         val config = DefaultJedisClientConfig.builder()
             .ssl(false)
             .user("default")
