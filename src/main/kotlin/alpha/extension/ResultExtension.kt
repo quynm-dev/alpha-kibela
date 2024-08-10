@@ -14,3 +14,10 @@ inline fun <V, E> Result<V, E>.then(block: (Err<E>) -> V): V {
         is Err -> block(this)
     }
 }
+
+fun <V, E> Result<V, E>.thenErr(): E? {
+    return when (this) {
+        is Ok -> null
+        is Err -> this.error
+    }
+}

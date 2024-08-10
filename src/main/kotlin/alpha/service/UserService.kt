@@ -6,10 +6,7 @@ import alpha.data.dto.response.UserResponseDto
 import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
-import alpha.extension.isType
-import alpha.extension.then
-import alpha.extension.wrapError
-import alpha.extension.wrapResult
+import alpha.extension.*
 import alpha.mapper.toResponse
 import alpha.repository.UserRepository
 import mu.KotlinLogging
@@ -34,17 +31,31 @@ class UserService(
         }
     }
 
-    suspend fun create(userObject: UserObject, isOAuthUser: Boolean? = true): UniResult<Int> {
+    suspend fun register(newUserObject: UserObject): UniResult<Int> {
         try {
-            if (isOAuthUser == false) {
-                findByUsername(userObject.username!!).then { e ->
-                    if (!e.error.isType(CodeFactory.USER.NOT_FOUND)) {
-                        logger.error { e.error.message }
-                        return e
-                    }
-                }
+            val findUserError = findByUsername(newUserObject.username!!).thenErr()
+            if (findUserError == null) {
+                logger.error { "User already exists with username: ${newUserObject.username}" }
+                return AppError(CodeFactory.USER.CONFLICT, "User already exists").wrapError()
             }
 
+            if (!findUserError.isType(CodeFactory.USER.NOT_FOUND)) {
+                logger.error { findUserError.message }
+                return findUserError.wrapError()
+            }
+
+            return userRepository.create(newUserObject).wrapResult()
+        } catch (e: ExposedSQLException) {
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.DB_ERROR, "Failed to create a user").wrapError()
+        } catch (e: Exception) {
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
+        }
+    }
+
+    suspend fun create(userObject: UserObject): UniResult<Int> {
+        try {
             return userRepository.create(userObject).wrapResult()
         } catch (e: ExposedSQLException) {
             logger.error { e.message }
@@ -100,7 +111,7 @@ class UserService(
             val userObject = userRepository.findOAuthUser(serviceType, sub)
             if (userObject == null) {
                 val id = create(newUserObject).then {
-                    logger.error { it.error }
+                    logger.error { it.error.message }
                     return it
                 }
 

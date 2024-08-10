@@ -23,5 +23,7 @@ class CodeFactory {
         }
     }
 
-    class UserCode : GeneralCode(Domain.USER)
+    class UserCode : GeneralCode(Domain.USER) {
+        val CONFLICT = buildCode(HttpStatusCode.Conflict)
+    }
 }

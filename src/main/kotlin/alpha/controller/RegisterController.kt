@@ -18,7 +18,7 @@ fun Route.registerController() {
     route("/register") {
         post {
             val createUserRequestDto = call.receive<CreateUserRequestDto>()
-            userService.create(createUserRequestDto.toObject()).mapBoth(
+            userService.register(createUserRequestDto.toObject()).mapBoth(
                 success = { call.respond(HttpStatusCode.Created) },
                 failure = { call.respondError(it) }
             )
