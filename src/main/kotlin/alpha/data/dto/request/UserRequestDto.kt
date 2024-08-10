@@ -4,7 +4,7 @@ import alpha.common.Role
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreateUserRequestDto(
+data class RegisterUserRequestDto(
     val username: String,
     val password: String,
     val name: String,

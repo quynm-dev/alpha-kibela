@@ -3,7 +3,7 @@ package alpha.mapper
 import alpha.common.Role
 import alpha.common.ServiceType
 import alpha.common.Status
-import alpha.data.dto.request.CreateUserRequestDto
+import alpha.data.dto.request.RegisterUserRequestDto
 import alpha.data.dto.response.UserResponseDto
 import alpha.data.entity.UserEntity
 import alpha.data.`object`.UserObject
@@ -27,7 +27,7 @@ fun UserEntity.toObject(withPassword: Boolean? = false): UserObject {
     )
 }
 
-fun CreateUserRequestDto.toObject(): UserObject {
+fun RegisterUserRequestDto.toObject(): UserObject {
     val salt = getEnvOrError("SALT")
     return UserObject(
         username = this.username,

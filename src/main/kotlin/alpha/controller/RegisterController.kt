@@ -1,6 +1,6 @@
 package alpha.controller
 
-import alpha.data.dto.request.CreateUserRequestDto
+import alpha.data.dto.request.RegisterUserRequestDto
 import alpha.extension.respondError
 import alpha.mapper.toObject
 import alpha.service.UserService
@@ -17,8 +17,8 @@ fun Route.registerController() {
 
     route("/register") {
         post {
-            val createUserRequestDto = call.receive<CreateUserRequestDto>()
-            userService.register(createUserRequestDto.toObject()).mapBoth(
+            val registerUserRequestDto = call.receive<RegisterUserRequestDto>()
+            userService.register(registerUserRequestDto.toObject()).mapBoth(
                 success = { call.respond(HttpStatusCode.Created) },
                 failure = { call.respondError(it) }
             )
