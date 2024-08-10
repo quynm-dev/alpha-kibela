@@ -51,14 +51,14 @@ class AuthService(
     suspend fun authenticateStandard(authRequestDto: StandardAuthRequestDto): UniResult<AuthResponseDto> {
         try {
             val userObject = userService.findByUsername(authRequestDto.username).then {
-                logger.error { it.error }
+                logger.error { it.error.message }
                 return it
             }
             val isPasswordValid =
                 Bcrypt.verify(authRequestDto.password, userObject.password.toString().encodeToByteArray())
             if (!isPasswordValid) {
-                val appErr = AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized")
-                return appErr.wrapError()
+                logger.error { "Invalid password" }
+                return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
             }
 
             val (accessToken, refreshToken) = generateTokenPair(userObject)
@@ -73,25 +73,25 @@ class AuthService(
 
             return authResponse.wrapResult()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 
     suspend fun authenticateGoogle(authRequestDto: OAuthRequestDto): UniResult<AuthResponseDto> {
         try {
             val googleAuthResponse = handleAuthenticateGoogle(authRequestDto).then {
-                logger.error { it.error }
+                logger.error { it.error.message }
                 return it
             }
             val googleUserInfoResponse = handleUserInfoGoogle(googleAuthResponse.accessToken).then {
-                logger.error { it.error }
+                logger.error { it.error.message }
                 return it
             }
             val userObject =
                 userService.findOAuthUserAndCreateIfNotExist(ServiceType.GOOGLE, googleUserInfoResponse.toUserObject())
                     .then {
-                        logger.error { it.error }
+                        logger.error { it.error.message }
                         return it
                     }
             val (accessToken, refreshToken) = generateTokenPair(userObject)
@@ -106,26 +106,26 @@ class AuthService(
 
             return authResponse.wrapResult()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 
     suspend fun authenticateFacebook(authRequestDto: OAuthRequestDto): UniResult<AuthResponseDto> {
         try {
             val facebookAuthResponse = handleAuthenticateFacebook(authRequestDto).then {
-                logger.error { it.error }
+                logger.error { it.error.message }
                 return it
             }
             val facebookUserInfoResponse = handleUserInfoFacebook(facebookAuthResponse.accessToken).then {
-                logger.error { it.error }
+                logger.error { it.error.message }
                 return it
             }
             val userObject = userService.findOAuthUserAndCreateIfNotExist(
                 ServiceType.FACEBOOK,
                 facebookUserInfoResponse.toUserObject()
             ).then {
-                logger.error { it.error }
+                logger.error { it.error.message }
                 return it
             }
             val (accessToken, refreshToken) = generateTokenPair(userObject)
@@ -140,8 +140,8 @@ class AuthService(
 
             return authResponse.wrapResult()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 
@@ -159,6 +159,7 @@ class AuthService(
 
         return httpClient.post(GOOGLE_AUTH_URL, googleAuthRequest)
             .deserializeWithStatus<GoogleAuthResponseDto>(HttpStatusCode.OK) {
+                logger.error { "Failed to deserialize google auth response" }
                 return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
             }.wrapResult()
     }
@@ -176,6 +177,7 @@ class AuthService(
 
         return httpClient.post(FACEBOOK_AUTH_URL, facebookAuthRequest)
             .deserializeWithStatus<FacebookAuthResponseDto>(HttpStatusCode.OK) {
+                logger.error { "Failed to deserialize facebook auth response" }
                 return AppError(CodeFactory.USER.UNAUTHORIZED, "Unauthorized").wrapError()
             }.wrapResult()
     }
@@ -186,6 +188,7 @@ class AuthService(
         }
 
         return googleUserInfoResponse.deserializeWithStatus<GoogleUserInfoResponseDto>(HttpStatusCode.OK) {
+            logger.error { "Failed to deserialize google user info response" }
             return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Failed to get google user info").wrapError()
         }.wrapResult()
     }
@@ -199,6 +202,7 @@ class AuthService(
         }
 
         return facebookUserInfoResponse.deserializeWithStatus<FacebookUserInfoResponseDto>(HttpStatusCode.OK) {
+            logger.error { "Failed to deserialize facebook user info response" }
             return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Failed to get facebook user info").wrapError()
         }.wrapResult()
     }

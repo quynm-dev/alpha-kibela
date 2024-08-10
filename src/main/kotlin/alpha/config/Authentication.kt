@@ -53,6 +53,4 @@ val AuthenticationHeaderChallenge = createRouteScopedPlugin("AuthenticationHeade
     }
 }
 
-private fun JWTCredential.isExpired(): Boolean {
-    return expiresAt?.before(Date()) ?: true
-}
+private fun JWTCredential.isExpired() = expiresAt?.before(Date()) ?: true

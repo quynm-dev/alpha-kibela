@@ -6,12 +6,12 @@ import alpha.data.dto.response.UserResponseDto
 import alpha.data.`object`.UserObject
 import alpha.error.AppError
 import alpha.error.CodeFactory
+import alpha.extension.isType
 import alpha.extension.then
 import alpha.extension.wrapError
 import alpha.extension.wrapResult
 import alpha.mapper.toResponse
 import alpha.repository.UserRepository
-import com.github.michaelbull.result.unwrapError
 import mu.KotlinLogging
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.koin.core.annotation.Singleton
@@ -26,11 +26,11 @@ class UserService(
         try {
             return userRepository.findAll().map { it.toResponse() }.wrapResult()
         } catch (e: ExposedSQLException) {
-            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to get all users")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.DB_ERROR, "Failed to get all users").wrapError()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 
@@ -38,8 +38,8 @@ class UserService(
         try {
             if (isOAuthUser == false) {
                 findByUsername(userObject.username!!).then { e ->
-                    if (e.unwrapError().code != CodeFactory.USER.NOT_FOUND) {
-                        logger.error { e.error }
+                    if (!e.error.isType(CodeFactory.USER.NOT_FOUND)) {
+                        logger.error { e.error.message }
                         return e
                     }
                 }
@@ -47,11 +47,11 @@ class UserService(
 
             return userRepository.create(userObject).wrapResult()
         } catch (e: ExposedSQLException) {
-            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to create a user")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.DB_ERROR, "Failed to create a user").wrapError()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 
@@ -59,17 +59,17 @@ class UserService(
         try {
             val userObject = userRepository.findById(id)
             if (userObject == null) {
-                val notFoundErr = AppError(CodeFactory.USER.NOT_FOUND, "User not found")
-                return notFoundErr.wrapError()
+                logger.error { "User not found with id: $id" }
+                return AppError(CodeFactory.USER.NOT_FOUND, "User not found").wrapError()
             }
 
             return userObject.wrapResult()
         } catch (e: ExposedSQLException) {
-            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user with id: $id")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user with id: $id").wrapError()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 
@@ -77,17 +77,17 @@ class UserService(
         try {
             val userObject = userRepository.findByUsername(username)
             if (userObject == null) {
-                val notFoundErr = AppError(CodeFactory.USER.NOT_FOUND, "User not found")
-                return notFoundErr.wrapError()
+                logger.error { "User not found with username: $username" }
+                return AppError(CodeFactory.USER.NOT_FOUND, "User not found").wrapError()
             }
 
             return userObject.wrapResult()
         } catch (e: ExposedSQLException) {
-            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user with username: $username")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user with username: $username").wrapError()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 
@@ -109,11 +109,11 @@ class UserService(
 
             return userObject.wrapResult()
         } catch (e: ExposedSQLException) {
-            val appErr = AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.DB_ERROR, "Failed to find a user").wrapError()
         } catch (e: Exception) {
-            val appErr = AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred")
-            return appErr.wrapError()
+            logger.error { e.message }
+            return AppError(CodeFactory.USER.INTERNAL_SERVER_ERROR, "Unexpected error occurred").wrapError()
         }
     }
 }

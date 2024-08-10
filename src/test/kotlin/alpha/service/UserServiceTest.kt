@@ -2,6 +2,9 @@
 
 package alpha.service
 
+import alpha.common.Role
+import alpha.common.ServiceType
+import alpha.common.Status
 import alpha.data.`object`.UserObject
 import alpha.error.CodeFactory
 import alpha.helper.mock
@@ -40,10 +43,23 @@ class UserServiceTest {
     @Test
     fun findAll_ReturnAllUsers() = runBlocking {
         val id = 1
-        val username = "john_doe"
-        val email = "john.doe@example.com"
+        val username = "starkusername"
+        val password = "password"
+        val name = "Tony Stark"
         val now = LocalDateTime.now()
-        val userObjects = listOf(UserObject(1, username, email, now, now))
+        val userObjects = listOf(
+            UserObject(
+                id = 1,
+                username = username,
+                password = password,
+                name = name,
+                serviceType = ServiceType.STANDARD.number,
+                role = Role.USER.number,
+                status = Status.ACTIVE.number,
+                createdAt = now,
+                updatedAt = now
+            )
+        )
 
         coEvery { userRepo.findAll() } returns userObjects
 
@@ -51,8 +67,8 @@ class UserServiceTest {
         assertEquals(result.size, 1)
         assertEquals(result.first().id, id)
         assertEquals(result.first().username, username)
-        assertEquals(result.first().email, email)
         assertEquals(result.first().createdAt, now)
+        assertEquals(result.first().updatedAt, now)
     }
 
     @Test
